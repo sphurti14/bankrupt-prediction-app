@@ -1,5 +1,6 @@
     
 #Importing Libraries:
+import numpy as np
 import streamlit as st 
 from keras.models import load_model
 from PIL import Image
@@ -34,42 +35,71 @@ st.write("""
 
 # Model Prediction func:
 def predict_bankruptcy(i,m,f,cr,co,o):
-    
-    pred=model.predict([[i,m,f,cr,co,o]])
-    prediction = (pred >=0.9995045) 
-    prediction=1*prediction
-    print(prediction)
-    return prediction
+    pred = model.predict(np.array([[i, m, f, cr, co, o]]))
+
+    # DEBUG (optional, can remove later)
+    st.write("Raw prediction:", pred)
+
+    try:
+        val = pred[0][0]
+    except:
+        val = pred[0]
+
+    return int(val)
 #-------------------------------------------------------------------------------------------------------------------------------
+
+
 
 # Graph function:
 def graph1(choice):
     plt.rcParams.update({'font.size': 6})
-    if choice=='None':
-        g=0
-        h=0
-        return g,h
-    else:
-        g=sns.catplot(" class", hue=choice, data=bank_data, kind="count",height=2,aspect=1.25, 
-                          palette={0:"yellow", 0.5:"orange", 1:"red"})
-        g.legend.set_title(choice, prop={"size":7})
-        g.set_xticklabels(["Bankrupted", "Not Bankrupted"])
-        g.fig.suptitle("%s vs Bankruptcy"%choice);
-        plt.gcf().set_size_inches(3,3)
-#--------------------            
-        h=sns.catplot(choice, hue=" class", data=bank_data, kind="count",height=2,aspect=1.25,
-                        palette={1:"blue", 0:"green"}) 
-        h.legend.set_title("Bankruptcy", prop={"size":7}) 
-        h.set_xticklabels(["Low", "Medium","High"]) 
-        h.fig.suptitle("%s vs Bankruptcy"%choice);
-        plt.gcf().set_size_inches(3,3)
-        return g,h
+    
+    # Clean column names
+    bank_data.columns = bank_data.columns.str.strip()
+    choice = choice.strip()
+
+    if choice == 'None':
+        return 0, 0
+
+    # -------- Graph 1 --------
+    g = sns.catplot(
+        x="class",
+        hue=choice,
+        data=bank_data,
+        kind="count",
+        height=2,
+        aspect=1.25,
+        palette={0: "yellow", 0.5: "orange", 1: "red"}
+    )
+    
+    g.legend.set_title(choice, prop={"size": 7})
+    g.set_xticklabels(["Bankrupted", "Not Bankrupted"])
+    g.fig.suptitle(f"{choice} vs Bankruptcy")
+    plt.gcf().set_size_inches(3, 3)
+
+    # -------- Graph 2 --------
+    h = sns.catplot(
+        x=choice,
+        hue="class",
+        data=bank_data,
+        kind="count",
+        height=2,
+        aspect=1.25,
+        palette={1: "blue", 0: "green"}
+    )
+    
+    h.legend.set_title("Bankruptcy", prop={"size": 7})
+    h.set_xticklabels(["Low", "Medium", "High"])
+    h.fig.suptitle(f"{choice} vs Bankruptcy")
+    plt.gcf().set_size_inches(3, 3)
+
+    return g, h
             
 #-------------------------------------------------------------------------------------------------------------------------------    
 
 # Blog func:
 def myinfo():
-    st.write("My name is Neha Patil and I am a Data Science enthusiast.")
+    st.write("My name is Sphurtis Patil and I am a Data Science enthusiast.")
 #-------------------------------------------------------------------------------------------------------------------------------
 
 #Input func:
@@ -113,53 +143,85 @@ def main():
     #---------------------------------------------------------------------------------------------------------------------------
 
 # Result:       
-            result=""
-            if st.button("Predict"):
-                with st.spinner('Wait for it...'):
-                    time.sleep(3)
-                result=predict_bankruptcy(i,m,f,cr,co,o)
-            
-            if result==0:
-                result='BANKRUPTED!!'
-            elif result==1:
-                st.balloons()
-                result= 'NOT BANKRUPTED!!'
-            else:
-                result='yet to submit...'
-            st.success("### You are {}".format(result))
-        else:
-            st.write("Whenever you're ready..!")
-    st.markdown("---")
-    #---------------------------------------------------------------------------------------------------------------------------
-    
-# Graph: 
-    if st.checkbox("Show Graphs",value=False):
-        choice = st.selectbox("Choose Feature Values :",
-                     ('None','industrial_risk', ' management_risk', ' financial_flexibility',
-                      ' credibility',' competitiveness',' operating_risk'))        
-        
-        col1,col2=st.columns(2)
-        plot1,plot2=graph1(choice)
-        if plot1!=0:
-            with col1:
-                st.pyplot(plot1)
-            with col2:
-                st.pyplot(plot2)
-        else:
-            st.write("No Feature chosen!")
-        st.markdown("---")
-#---------------------------------------------------------------------------------------------------------------------------
-    with col4:
-        st.write("")
-# My info:
-    with col5:
-        #if st.button("My info"):
-            #myinfo()
-        expander=st.expander("My info",expanded=False)
-        with expander:
-            st.info("My name is Neha Patil and I am a Data Science enthusiast.")
-#-------------------------------------------------------------------------------------------------------------------------------
+    result = ""
 
-# Program Starts:
-if __name__=='__main__':
+# ---------------- INPUT SECTION ----------------
+col1, col2, col3 = st.columns(3)
+
+with col1:
+    i = st.selectbox("Industrial Risk", [0.0, 0.5, 1.0])
+
+with col2:
+    m = st.selectbox("Management Risk", [0.0, 0.5, 1.0])
+
+with col3:
+    f = st.selectbox("Financial Flexibility", [0.0, 0.5, 1.0])
+
+col4, col5, col6 = st.columns(3)
+
+with col4:
+    cr = st.selectbox("Credibility", [0.0, 0.5, 1.0])
+
+with col5:
+    co = st.selectbox("Competitiveness", [0.0, 0.5, 1.0])
+
+with col6:
+    o = st.selectbox("Operating Risk", [0.0, 0.5, 1.0])
+
+
+# ---------------- PREDICT SECTION ----------------
+if st.button("Predict"):
+    with st.spinner('Wait for it...'):
+        time.sleep(3)
+
+    result = predict_bankruptcy(i, m, f, cr, co, o)
+
+    if result == 1:
+        st.error("### You are BANKRUPTED!!")
+    else:
+        st.balloons()
+        st.success("### You are NOT BANKRUPTED!!")
+
+else:
+    st.write("Whenever you're ready..!")
+
+st.markdown("---")
+
+
+# ---------------- GRAPH SECTION ----------------
+if st.checkbox("Show Graphs", value=False):
+    choice = st.selectbox(
+        "Choose Feature Values :",
+        ('None', 'industrial_risk', 'management_risk', 'financial_flexibility',
+         'credibility', 'competitiveness', 'operating_risk')
+    )
+
+    col1, col2 = st.columns(2)
+    plot1, plot2 = graph1(choice)
+
+    if plot1 != 0:
+        with col1:
+            st.pyplot(plot1)
+        with col2:
+            st.pyplot(plot2)
+    else:
+        st.write("No Feature chosen!")
+
+    st.markdown("---")
+
+
+# ---------------- BOTTOM SECTION ----------------
+col4, col5 = st.columns(2)
+
+with col4:
+    st.write("")
+
+with col5:
+    expander = st.expander("My info", expanded=False)
+    with expander:
+        st.info("My name is Sphurti Patil and I am a Data Science enthusiast.")
+
+
+# ---------------- MAIN ----------------
+if __name__ == '__main__':
     main()
