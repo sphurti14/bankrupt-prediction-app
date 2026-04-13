@@ -136,7 +136,7 @@ Threshold used: 0.9995045
 ## ▶️ Run Locally
 
 ```bash
-git clone https://github.com/sphurti14/bankruptcy-prediction-app.git
+git clone https://github.com/sphurti14/bankrupt-prediction-app.git
 cd bankruptcy-prediction-app
 pip install -r requirements.txt
 streamlit run prev.py
